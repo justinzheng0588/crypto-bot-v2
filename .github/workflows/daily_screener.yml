@@ -1,0 +1,39 @@
+name: Daily Crypto Screener
+
+on:
+  schedule:
+    # 08:00 UTC = 约晚上 20:00 Auckland 时间（NZST UTC+12）
+    # 可按需调整，网上搜 "crontab guru" 可视化编辑
+    - cron: "0 8 * * *"
+  workflow_dispatch: {}   # 允许在 Actions 标签页手动触发
+
+jobs:
+  run-screener:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行筛选脚本
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          COINGECKO_API_KEY:  ${{ secrets.COINGECKO_API_KEY }}
+          LUNARCRUSH_API_KEY: ${{ secrets.LUNARCRUSH_API_KEY }}
+        run: python main.py
+
+      - name: 上传 HTML 报告（可下载）
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-report
+          path: daily_report_*.html
+          retention-days: 30   # 保留30天
