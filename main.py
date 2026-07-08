@@ -2,9 +2,9 @@
 main.py — 主入口
 运行顺序：
 1. CoinGecko 按赛道拉取候选池
-2. Binance 公开 API 获取上线列表
-3. 基础粗筛（市值 + MC/FDV + Binance）
-4. 只对候选币获取社交数据（CoinGecko，免费）
+2. Binance 公开 API 获取上线列表（失败时跳过，不影响后续）
+3. 基础粗筛（市值 + MC/FDV，Binance 失败时跳过该规则）
+4. 只对候选币获取社交数据
 5. 叠加社交热度过滤
 6. 输出到 Telegram + 本地 HTML
 """
@@ -52,14 +52,14 @@ def main():
             unique_coins.append(c)
     print(f"\n✅ 去重后共 {len(unique_coins)} 个候选币种")
 
-    # ── Step 2: Binance 上线列表 ───────────────────────────────────────────
+    # ── Step 2: Binance 上线列表（失败时跳过，不影响后续）────────────────
     print("\n📡 Binance: 获取现货上线列表...")
     try:
         binance_symbols = get_binance_listed_symbols()
         print(f"   → 共 {len(binance_symbols)} 个 USDT 交易对")
     except Exception as e:
-        print(f"   ⚠️  获取失败: {e}", file=sys.stderr)
-        binance_symbols = set()
+        print(f"   ⚠️  Binance 获取失败（跳过该过滤规则）: {e}", file=sys.stderr)
+        binance_symbols = None  # None 表示跳过，不是空 set
 
     # ── Step 3: 基础筛选 ───────────────────────────────────────────────────
     print("\n🔍 第一步筛选（市值 + MC/FDV + Binance上线）...")

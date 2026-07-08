@@ -1,6 +1,6 @@
 """
 screener.py — 筛选逻辑，分两步
-Step 1: run_screener_basic  — 市值 + MC/FDV + Binance上线 + 排除黑名单
+Step 1: run_screener_basic  — 市值 + MC/FDV + Binance上线（可选）
 Step 2: run_screener_social — 叠加社交热度
 """
 
@@ -33,7 +33,13 @@ def check_mc_fdv_ratio(coin: dict) -> tuple[bool, str]:
     return True, f"MC/FDV={ratio:.2f}"
 
 
-def check_binance_listed(coin: dict, binance_symbols: set) -> tuple[bool, str]:
+def check_binance_listed(coin: dict, binance_symbols) -> tuple[bool, str]:
+    """
+    binance_symbols 为 None 时表示 Binance 获取失败，跳过此规则
+    binance_symbols 为 set 时正常过滤
+    """
+    if binance_symbols is None:
+        return True, "Binance 数据不可用（跳过）"
     symbol = (coin.get("symbol") or "").upper()
     if symbol in binance_symbols:
         return True, f"已上 Binance ({symbol}/USDT)"
@@ -41,7 +47,6 @@ def check_binance_listed(coin: dict, binance_symbols: set) -> tuple[bool, str]:
 
 
 def check_not_excluded(coin: dict) -> tuple[bool, str]:
-    """过滤代币化股票等非加密原生项目"""
     name = coin.get("name", "")
     for keyword in EXCLUDE_NAME_KEYWORDS:
         if keyword.lower() in name.lower():
@@ -49,7 +54,7 @@ def check_not_excluded(coin: dict) -> tuple[bool, str]:
     return True, "通过排除检查"
 
 
-def check_social_score(social_data: dict | None) -> tuple[bool, str]:
+def check_social_score(social_data) -> tuple[bool, str]:
     if social_data is None:
         return True, "社交数据不可用（跳过）"
     score = social_data.get("social_score", 0)
@@ -59,8 +64,11 @@ def check_social_score(social_data: dict | None) -> tuple[bool, str]:
     return True, f"社交评分={score:.1f} Twitter={twitter:,}"
 
 
-def run_screener_basic(coins: list, binance_symbols: set) -> list:
-    """第一步：市值 + MC/FDV + Binance + 排除黑名单"""
+def run_screener_basic(coins: list, binance_symbols) -> list:
+    """
+    第一步：市值 + MC/FDV + 排除黑名单 + Binance（可选）
+    binance_symbols=None 时跳过 Binance 过滤
+    """
     candidates = []
     for coin in coins:
         r0, m0 = check_not_excluded(coin)
@@ -84,9 +92,9 @@ def run_screener_basic(coins: list, binance_symbols: set) -> list:
                 "social_change_24h": "N/A",
                 "twitter_followers": 0,
                 "reasons": {
-                    "排除检查":   m0,
-                    "市值范围":   m1,
-                    "MC/FDV比":   m2,
+                    "排除检查":    m0,
+                    "市值范围":    m1,
+                    "MC/FDV比":    m2,
                     "Binance上线": m3,
                 },
             })
