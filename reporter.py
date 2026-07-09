@@ -22,14 +22,14 @@ def _fmt_mcap(usd: float) -> str:
     return f"${usd:,.0f}"
 
 
-def _fmt_twitter(n) -> str:
+def _fmt_num(n) -> str:
     if not isinstance(n, (int, float)) or n == 0:
         return "N/A"
     if n >= 1_000_000:
         return f"{n/1_000_000:.1f}M"
     if n >= 1_000:
         return f"{n/1_000:.0f}K"
-    return str(n)
+    return str(int(n))
 
 
 # ── Telegram ──────────────────────────────────────────────────────────────────
@@ -49,14 +49,15 @@ def build_telegram_message(candidates: list, title: str) -> str:
         change = c.get("change_24h") or 0
         score  = c.get("social_score", "N/A")
         score_str = f"{score:.1f}" if isinstance(score, float) else str(score)
-        twitter_str = _fmt_twitter(c.get("twitter_followers", 0))
+        reddit = c.get("reddit_active_users", 0)
+        reddit_str = _fmt_num(reddit)
 
         lines += [
             f"{i}. {c['name']} ({c['symbol']})",
             f"   赛道: {c['category']}",
             f"   价格: ${c['price']:,.4f}  ({change:+.2f}% 24h)",
             f"   市值: {_fmt_mcap(c['market_cap'])}  |  MC/FDV: {c['mc_fdv_ratio']:.2f}",
-            f"   社交评分: {score_str}  Twitter: {twitter_str}",
+            f"   社交评分: {score_str}  Reddit活跃: {reddit_str}",
             "",
         ]
 
@@ -87,7 +88,8 @@ def build_html_report(candidates: list, title: str) -> str:
             change_color = "#16a34a" if change >= 0 else "#dc2626"
             score = c.get("social_score", "N/A")
             score_str = f"{score:.1f}" if isinstance(score, float) else str(score)
-            twitter_str = _fmt_twitter(c.get("twitter_followers", 0))
+            reddit = c.get("reddit_active_users", 0)
+            reddit_str = _fmt_num(reddit)
 
             rows += f"""
             <tr>
@@ -97,7 +99,7 @@ def build_html_report(candidates: list, title: str) -> str:
                 <td>${c['price']:,.4f}</td>
                 <td style="color:{change_color}">{change:+.2f}%</td>
                 <td>{_fmt_mcap(c['market_cap'])}<br><span class="sub">MC/FDV: {c['mc_fdv_ratio']:.2f}</span></td>
-                <td>{score_str}<br><span class="sub">Twitter: {twitter_str}</span></td>
+                <td>{score_str}<br><span class="sub">Reddit: {reddit_str}</span></td>
             </tr>"""
 
     return f"""<!DOCTYPE html>

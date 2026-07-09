@@ -91,6 +91,7 @@ def run_screener_basic(coins: list, binance_symbols) -> list:
                 "social_score":  "N/A",
                 "social_change_24h": "N/A",
                 "twitter_followers": 0,
+                "reddit_active_users": 0,
                 "reasons": {
                     "排除检查":    m0,
                     "市值范围":    m1,
@@ -115,6 +116,7 @@ def run_screener_social(basic_candidates: list, social_batch: dict) -> list:
             if social_data:
                 c["social_score"] = social_data.get("social_score", "N/A")
                 c["twitter_followers"] = social_data.get("twitter_followers", 0)
+                c["reddit_active_users"] = social_data.get("reddit_active_users", 0)
             c["reasons"]["社交热度"] = reason
             candidates.append(c)
     return candidates
